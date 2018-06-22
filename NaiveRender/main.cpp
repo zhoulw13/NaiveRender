@@ -1,3 +1,6 @@
+#define MAIN
+#include "variables.h"
+
 #include "NaiveRender.h"
 #include <QtWidgets/QApplication>
 

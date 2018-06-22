@@ -59,5 +59,8 @@
     <ClInclude Include="CloseGL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="variables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

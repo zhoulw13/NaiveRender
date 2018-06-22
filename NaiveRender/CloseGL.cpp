@@ -35,7 +35,7 @@ void CloseGL::readfile(const char *filename) {
 			else if (cmd == "f") {
 				bool valid = readvals(ss, 3, values);
 				if (valid)
-					f_lst.push_back(face(values[0], values[1], values[2]));
+					f_lst.push_back(glm::vec3(values[0], values[1], values[2]));
 			}
 			else {
 				cout << "??" << endl;
@@ -46,6 +46,14 @@ void CloseGL::readfile(const char *filename) {
 	cout << "Load Over" << endl;
 	cout << "vertex num: " << v_lst.size() << "\n";
 	cout << "face   num: " << f_lst.size() << "\n";
+}
+
+CloseGL::CloseGL() {
+#ifdef MAIN
+	cout << "1";
+#else
+	cout << "2";
+#endif
 }
 
 void CloseGL::render() {
