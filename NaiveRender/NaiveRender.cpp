@@ -1,10 +1,12 @@
 #include "NaiveRender.h"
+#include "constants.h"
 #include <iostream>
 using namespace std;
 
 #include <qtoolbar.h>
 #include <qtoolbutton.h>
 #include <qfiledialog.h>
+#include <qpixmap.h>
 
 NaiveRender::NaiveRender(QWidget *parent)
 	: QMainWindow(parent)
@@ -13,9 +15,14 @@ NaiveRender::NaiveRender(QWidget *parent)
 	InitUI();
 
 	backend = new CloseGL();
+	displayLabel->resize(QSize(window_width, window_height));
+	ReRender();
 }
 
 void NaiveRender::InitUI() {
+	displayLabel = new QLabel(this);
+	setCentralWidget(displayLabel);
+
 	QToolBar *toolBar = addToolBar("Tool");
 
 	QToolButton *loadBtn = new QToolButton;
@@ -27,6 +34,12 @@ void NaiveRender::InitUI() {
 	toolBar->addSeparator();
 }
 
+void NaiveRender::ReRender() {
+	backend->render();
+	QImage img = QImage(backend->get_data(), window_width, window_height, QImage::Format_RGB888);
+	displayLabel->setPixmap(QPixmap::fromImage(img));
+}
+
 void NaiveRender::LoadObj() {
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Load Obj File"),
 		".", tr("Obj Files (*.obj)"));
@@ -35,5 +48,6 @@ void NaiveRender::LoadObj() {
 		fileName.replace('/', '\\');
 		string file = fileName.toLocal8Bit().constData();
 		backend->readfile(file.c_str());
+		ReRender();
 	}
 }

@@ -4,6 +4,9 @@
 #include "ui_NaiveRender.h"
 #include "CloseGL.h"
 
+#include <qlabel.h>
+#include <qimage.h>
+
 class NaiveRender : public QMainWindow
 {
 	Q_OBJECT
@@ -11,6 +14,7 @@ class NaiveRender : public QMainWindow
 public:
 	NaiveRender(QWidget *parent = Q_NULLPTR);
 	void InitUI();
+	void ReRender();
 
 public slots:
 	void LoadObj();
@@ -18,4 +22,6 @@ public slots:
 private:
 	Ui::NaiveRenderClass ui;
 	CloseGL *backend;
+
+	QLabel *displayLabel;
 };
