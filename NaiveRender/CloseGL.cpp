@@ -59,6 +59,8 @@ CloseGL::CloseGL() {
 	eye = eye_init;
 	up = up_init;
 	data = new unsigned char[window_width * window_height * 3];
+	t = new Transform();
+
 	reset_data();
 
 	k_camera[0] = glm::vec3(100*5, 0, window_width/2);
@@ -131,12 +133,34 @@ void print(Point p) {
 }
 
 Point CloseGL::projection(glm::vec3 p) {
-	glm::vec3 p_ = (p-eye) * k_camera;
+	glm::vec4 ph = vec4(p-eye, 1);
+	glm::vec3 p_ = ph * t->LookAt(eye, up) * k_camera;
 	return Point((double)p_[1]/(double)p_[2], (double)p_[0]/(double)p_[2]);
 }
 
+void CloseGL::camera_move(MOVE_EVENT event) {
+	if (event == TRANSITION_LEFT)
+		t->Transition(eye, glm::vec3(-1, 0, 0));
+	else if (event == TRANSITION_RIGHT)
+		t->Transition(eye, glm::vec3(1, 0, 0));
+	else if (event == TRANSITION_UP)
+		t->Transition(eye, glm::vec3(0, -1, 0));
+	else if (event == TRANSITION_DOWN)
+		t->Transition(eye, glm::vec3(0, 1, 0));
+	else if (event == ROTATE_LEFT)
+		t->Rotation(eye, up, 1, Z_ROTATE);
+	else if (event == ROTATE_RIGHT)
+		t->Rotation(eye, up, -1, Z_ROTATE);
+	else if (event == ROTATE_UP)
+		t->Rotation(eye, up, 1, X_ROTATE);
+	else if (event == ROTATE_DOWN)
+		t->Rotation(eye, up,  -1, X_ROTATE);
+}
+
 void CloseGL::render() {
+	print(eye);
 	int l = f_lst.size();
+	reset_data();
 	for (int i = 0; i < l; i++) {
 		set_triangle(projection(v_lst[f_lst[i][0]]), projection(v_lst[f_lst[i][1]]), projection(v_lst[f_lst[i][2]]), default_color);
 	}

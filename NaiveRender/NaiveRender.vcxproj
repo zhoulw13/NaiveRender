@@ -116,6 +116,7 @@
     <ClCompile Include="CloseGL.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NaiveRender.cpp" />
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="NaiveRender.h" />
@@ -129,6 +130,7 @@
   <ItemGroup>
     <ClInclude Include="CloseGL.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

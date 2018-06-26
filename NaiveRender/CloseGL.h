@@ -1,14 +1,30 @@
+#pragma once
+
 #include <sstream>
 #include <vector>
 using namespace std;
 
 #include <glm/glm.hpp>
+#include "Transform.h"
 
 typedef struct Point {
 	int x, y;
 
 	Point() {};
 	Point(int y, int x) :x(x), y(y) {};
+};
+
+enum MOVE_EVENT {
+	TRANSITION_LEFT,
+	TRANSITION_RIGHT,
+	TRANSITION_UP,
+	TRANSITION_DOWN,
+	SCALE_IN,
+	SCALE_OUT,
+	ROTATE_LEFT,
+	ROTATE_RIGHT,
+	ROTATE_UP,
+	ROTATE_DOWN
 };
 
 
@@ -18,7 +34,10 @@ private:
 	vector<glm::vec3> v_lst;
 	vector<glm::vec3> f_lst;
 
-	glm::mat3x3 k_camera;
+	glm::mat3 k_camera;
+	Transform *t;
+	glm::mat3 rot;
+	glm::vec3 tra;
 public:
 	unsigned char *data;
 
@@ -35,5 +54,6 @@ public:
 	int intersect(Point, Point, int);
 
 	Point projection(glm::vec3);
+	void camera_move(MOVE_EVENT);
 	void render();
 };

@@ -6,6 +6,7 @@
 
 #include <qlabel.h>
 #include <qimage.h>
+#include <QKeyEvent>
 
 class NaiveRender : public QMainWindow
 {
@@ -16,12 +17,17 @@ public:
 	void InitUI();
 	void ReRender();
 
+protected:
+	void keyPressEvent(QKeyEvent *);
+
 public slots:
 	void LoadObj();
+	void ResetView();
 
 private:
 	Ui::NaiveRenderClass ui;
 	CloseGL *backend;
+	bool loaded;
 
 	QLabel *displayLabel;
 };
