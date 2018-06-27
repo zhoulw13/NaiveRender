@@ -5,6 +5,23 @@
 #include <iostream>
 #include <algorithm>
 
+void print(glm::vec3 p) {
+	cout << "v " << p[0] << " " << p[1] << " " << p[2] << endl;
+}
+
+void print(glm::vec4 p) {
+	cout << "v " << p[0] << " " << p[1] << " " << p[2] << " " << p[3] << endl;
+}
+
+void print(glm::mat3 m) {
+	print(m[0]);
+	print(m[1]);
+	print(m[2]);
+}
+
+void print(Point p) {
+	cout << "p " << p.y << " " << p.x << endl;
+}
 
 bool CloseGL::readvals(stringstream &ss, const int num, float *values) {
 	for (int i = 0; i < num; i++) {
@@ -56,15 +73,23 @@ void CloseGL::readfile(const char *filename) {
 }
 
 CloseGL::CloseGL() {
-	eye = eye_init;
-	up = up_init;
 	data = new unsigned char[window_width * window_height * 3];
 	t = new Transform();
 
 	reset_data();
+	reset_transform();
+}
 
-	k_camera[0] = glm::vec3(100*5, 0, window_width/2);
-	k_camera[1] = glm::vec3(0, 100*5, window_height/2);
+void CloseGL::reset_transform() {
+	eye = eye_init;
+	up = up_init;
+	face = eye_init;
+
+	rot = glm::mat3(1.0f);
+	tra = eye;// glm::vec3();
+
+	k_camera[0] = glm::vec3(100 * 5, 0, window_width / 2);
+	k_camera[1] = glm::vec3(0, 100 * 5, window_height / 2);
 	k_camera[2] = glm::vec3(0, 0, 1);
 }
 
@@ -124,41 +149,53 @@ int CloseGL::intersect(Point p1, Point p2, int y) {
 	return (double)(y - p1.y) / (double)(p2.y - p1.y) * (p2.x - p1.x) + p1.x;
 }
 
-void print(glm::vec3 p) {
-	cout << "v " << p[0] << " " << p[1] << " " << p[2] << endl;
-}
-
-void print(Point p) {
-	cout << "p " << p.y << " " << p.x << endl;
-}
-
 Point CloseGL::projection(glm::vec3 p) {
-	glm::vec4 ph = vec4(p-eye, 1);
-	glm::vec3 p_ = ph * t->LookAt(eye, up) * k_camera;
-	return Point((double)p_[1]/(double)p_[2], (double)p_[0]/(double)p_[2]);
+	glm::vec4 ph = vec4(p, 1);
+	glm::mat4x3 x(rot);
+	x[3] = - rot * tra;
+	glm::vec3 p_ = x * ph * k_camera;
+	return Point(p_[1] / p_[2], p_[0] / p_[2]);
 }
 
 void CloseGL::camera_move(MOVE_EVENT event) {
 	if (event == TRANSITION_LEFT)
-		t->Transition(eye, glm::vec3(-1, 0, 0));
+		tra += t->Transition(face, up, glm::vec3(1, 0, 0));
 	else if (event == TRANSITION_RIGHT)
-		t->Transition(eye, glm::vec3(1, 0, 0));
+		tra += t->Transition(face, up, glm::vec3(-1, 0, 0));
 	else if (event == TRANSITION_UP)
-		t->Transition(eye, glm::vec3(0, -1, 0));
+		tra += t->Transition(face, up, glm::vec3(0, 1, 0));
 	else if (event == TRANSITION_DOWN)
-		t->Transition(eye, glm::vec3(0, 1, 0));
-	else if (event == ROTATE_LEFT)
-		t->Rotation(eye, up, 1, Z_ROTATE);
-	else if (event == ROTATE_RIGHT)
-		t->Rotation(eye, up, -1, Z_ROTATE);
-	else if (event == ROTATE_UP)
-		t->Rotation(eye, up, 1, X_ROTATE);
-	else if (event == ROTATE_DOWN)
-		t->Rotation(eye, up,  -1, X_ROTATE);
+		tra += t->Transition(face, up, glm::vec3(0, -1, 0));
+	else if (event == TRANSITION_IN)
+		tra += t->Transition(face, up, glm::vec3(0, 0, 1));
+	else if (event == TRANSITION_OUT)
+		tra += t->Transition(face, up, glm::vec3(0, 0, -1));
+	else if (event == ROTATE_LEFT) {
+		glm::mat3 tmp = t->Rotate(1, up);
+		face = tmp * face;
+		rot = tmp * rot;
+	}
+	else if (event == ROTATE_RIGHT) {
+		glm::mat3 tmp = t->Rotate(-1, up);
+		face = tmp * face;
+		rot = tmp * rot;
+	}
+	else if (event == ROTATE_UP) {
+		glm::mat3 tmp = t->Rotate(1, glm::cross(face, up));
+		face = tmp * face;
+		up = tmp * up;
+		rot = tmp * rot;
+	}
+	else if (event == ROTATE_DOWN) {
+		glm::mat3 tmp = t->Rotate(1, glm::cross(face, up));
+		face = tmp * face;
+		up = tmp * up;
+		rot = tmp * rot;
+	}
+	print(rot);
 }
 
 void CloseGL::render() {
-	print(eye);
 	int l = f_lst.size();
 	reset_data();
 	for (int i = 0; i < l; i++) {

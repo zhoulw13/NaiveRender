@@ -19,6 +19,8 @@ enum MOVE_EVENT {
 	TRANSITION_RIGHT,
 	TRANSITION_UP,
 	TRANSITION_DOWN,
+	TRANSITION_IN,
+	TRANSITION_OUT,
 	SCALE_IN,
 	SCALE_OUT,
 	ROTATE_LEFT,
@@ -30,7 +32,7 @@ enum MOVE_EVENT {
 
 class CloseGL {
 private:
-	glm::vec3 eye, up;
+	glm::vec3 eye, up, face;
 	vector<glm::vec3> v_lst;
 	vector<glm::vec3> f_lst;
 
@@ -48,6 +50,7 @@ public:
 
 	unsigned char *get_data() { return data; };
 	void reset_data();
+	void reset_transform();
 	void set_pixel(int, int, const unsigned char *);
 	void set_segment(int, int, int, const unsigned char *);
 	void set_triangle(Point, Point, Point, const unsigned char *);

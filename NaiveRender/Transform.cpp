@@ -1,6 +1,12 @@
 #include "Transform.h"
 
-void Transform::Transition(vec3 &eye, vec3 direction) {
+vec3 Transform::Transition(vec3 &eye, vec3& up, vec3 direction) {
+	vec3 w = glm::normalize(eye);
+	vec3 u = glm::normalize(glm::cross(up, w));
+	vec3 v = glm::cross(w, u);
+
+	mat3 x(u, v, w);
+	return scale * direction * x;
 	eye += direction * scale;
 }
 
@@ -23,14 +29,15 @@ mat3 Transform::Rotate(float degree, vec3 axis) {
 }
 
 void Transform::Rotation(vec3 &eye, vec3 &up, int direction, ROTATE_TYPE type) {
-	if (type == Z_ROTATE) {
+	
+	/*if (type == Z_ROTATE) {
 		eye = eye * Rotate(direction * scale, up);
 	}
 	else if (type == X_ROTATE) {
 		mat3 rot = Rotate(direction * scale, glm::cross(eye, up));
 		eye = eye * rot;
 		up = up * rot;
-	}
+	}*/
 }
 
 mat4 Transform::LookAt(vec3 &eye, vec3 &up) {

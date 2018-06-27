@@ -20,7 +20,7 @@ public:
 	Transform();
 	~Transform();
 
-	void Transition(vec3 &eye, vec3 direction);
+	vec3 Transition(vec3 &eye, vec3& up, vec3 direction);
 	void Rotation(vec3 &eye, vec3 &up, int direction, ROTATE_TYPE);
 	mat3 Rotate(float degree, vec3 axis);
 	mat4 LookAt(vec3 &eye, vec3 &up);

@@ -57,12 +57,13 @@ void NaiveRender::LoadObj() {
 		string file = fileName.toLocal8Bit().constData();
 		backend->readfile(file.c_str());
 		loaded = true;
-		ReRender();
+		ResetView();
 	}
 }
 
 void NaiveRender::ResetView() {
-
+	backend->reset_transform();
+	ReRender();
 }
 
 void NaiveRender::keyPressEvent(QKeyEvent *event) {
@@ -77,6 +78,10 @@ void NaiveRender::keyPressEvent(QKeyEvent *event) {
 		backend->camera_move(TRANSITION_LEFT);
 	else if (event->key() == Qt::Key::Key_D)
 		backend->camera_move(TRANSITION_RIGHT);
+	else if (event->key() == Qt::Key::Key_Q)
+		backend->camera_move(TRANSITION_IN);
+	else if (event->key() == Qt::Key::Key_E)
+		backend->camera_move(TRANSITION_OUT);
 	else if (event->key() == Qt::Key::Key_I)
 		backend->camera_move(ROTATE_UP);
 	else if (event->key() == Qt::Key::Key_K)
