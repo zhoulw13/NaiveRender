@@ -7,6 +7,7 @@ using namespace std;
 #include <qtoolbutton.h>
 #include <qfiledialog.h>
 #include <qpixmap.h>
+#include <qbuttongroup.h>
 
 NaiveRender::NaiveRender(QWidget *parent)
 	: QMainWindow(parent)
@@ -23,23 +24,58 @@ NaiveRender::NaiveRender(QWidget *parent)
 void NaiveRender::InitUI() {
 	displayLabel = new QLabel(this);
 	setCentralWidget(displayLabel);
+	
+	QMenuBar *mb = menuBar();
+	QMenu *file = mb->addMenu("&File");
+	file->addAction("&Load Obj", this, SLOT(LoadObj()));
+	file->addSeparator();
+	file->addAction("&Quit", qApp, SLOT(quit()));
 
-	QToolBar *toolBar = addToolBar("Tool");
+	QMenu *view = mb->addMenu("&View");
+	view->addAction("&Reset View", this, SLOT(ResetView()));
+	view->addSeparator();
+	QMenu *colorSchemeMenu = view->addMenu("&Color Scheme");
+	view->addSeparator();
+	QMenu *projectionMenu = view->addMenu("&Projection");
 
-	QToolButton *loadBtn = new QToolButton;
-	QPixmap load("Resources/obj.png");
-	loadBtn->setIcon(QIcon(load));
-	loadBtn->setToolTip("Load");
-	connect(loadBtn, SIGNAL(clicked(bool)), this, SLOT(LoadObj()));
-	toolBar->addWidget(loadBtn);
-	toolBar->addSeparator();
+	//color scheme menu group
+	colorSchemeGroup = new QActionGroup(this);
 
-	QToolButton *resetBtn = new QToolButton;
-	QPixmap reset("Resources/reset.png");
-	resetBtn->setIcon(QIcon(reset));
-	resetBtn->setToolTip("Reset View");
-	connect(resetBtn, SIGNAL(clicked(bool)), this, SLOT(ResetView()));
-	toolBar->addWidget(resetBtn);
+	segmentAct = new QAction(tr("&Segment"), colorSchemeGroup);
+	segmentAct->setCheckable(true);
+	segmentAct->setStatusTip(tr("Colorize Segment"));
+	connect(segmentAct, &QAction::triggered, this, &NaiveRender::ColorScheme);
+
+	faceAct = new QAction(tr("&Face"), colorSchemeGroup);
+	faceAct->setCheckable(true);
+	faceAct->setStatusTip(tr("Colorize Face"));
+	connect(faceAct, &QAction::triggered, this, &NaiveRender::ColorScheme);
+
+	segmentAct->setChecked(true);
+	colorSchemeGroup->setExclusive(true);
+
+	colorSchemeMenu->addActions(colorSchemeGroup->actions());
+
+	//projection menu group
+	projectionGroup = new QActionGroup(this);
+
+	persAct = new QAction(tr("&Perspective"), projectionGroup);
+	persAct->setCheckable(true);
+	persAct->setStatusTip(tr("Perspective Projection"));
+	connect(persAct, &QAction::triggered, this, &NaiveRender::Projection);
+	
+	orthAct = new QAction(tr("&Orthogonal"), projectionGroup);
+	orthAct->setCheckable(true);
+	orthAct->setStatusTip(tr("Orthogonal Projection"));
+	connect(orthAct, &QAction::triggered, this, &NaiveRender::Projection);
+
+	persAct->setChecked(true);
+	projectionGroup->setExclusive(true);
+
+	projectionMenu->addActions(projectionGroup->actions());
+
+	mb->show();
+	setMenuBar(mb);
 }
 
 void NaiveRender::ReRender() {
@@ -66,22 +102,38 @@ void NaiveRender::ResetView() {
 	ReRender();
 }
 
+void NaiveRender::ColorScheme() {
+	if (colorSchemeGroup->checkedAction() == faceAct)
+		backend->set_color_scheme(FACE);
+	else if (colorSchemeGroup->checkedAction() == segmentAct)
+		backend->set_color_scheme(SEGMENT);
+	ReRender();
+}
+
+void NaiveRender::Projection() {
+	if (projectionGroup->checkedAction() == persAct)
+		backend->set_projection(PERSPECTIVE);
+	else if (projectionGroup->checkedAction() == orthAct)
+		backend->set_projection(ORTHOGONAL);
+	ReRender();
+}
+
 void NaiveRender::keyPressEvent(QKeyEvent *event) {
 	if (!loaded)
 		return;
 	cout << event->key() << endl;
 	if (event->key() == Qt::Key::Key_W)
-		backend->camera_move(TRANSITION_UP);
+		backend->camera_move(TRANSLATE_UP);
 	else if (event->key() == Qt::Key::Key_S)
-		backend->camera_move(TRANSITION_DOWN);
+		backend->camera_move(TRANSLATE_DOWN);
 	else if (event->key() == Qt::Key::Key_A)
-		backend->camera_move(TRANSITION_LEFT);
+		backend->camera_move(TRANSLATE_LEFT);
 	else if (event->key() == Qt::Key::Key_D)
-		backend->camera_move(TRANSITION_RIGHT);
+		backend->camera_move(TRANSLATE_RIGHT);
 	else if (event->key() == Qt::Key::Key_Q)
-		backend->camera_move(TRANSITION_IN);
+		backend->camera_move(TRANSLATE_IN);
 	else if (event->key() == Qt::Key::Key_E)
-		backend->camera_move(TRANSITION_OUT);
+		backend->camera_move(TRANSLATE_OUT);
 	else if (event->key() == Qt::Key::Key_I)
 		backend->camera_move(ROTATE_UP);
 	else if (event->key() == Qt::Key::Key_K)
@@ -90,6 +142,10 @@ void NaiveRender::keyPressEvent(QKeyEvent *event) {
 		backend->camera_move(ROTATE_LEFT);
 	else if (event->key() == Qt::Key::Key_L)
 		backend->camera_move(ROTATE_RIGHT);
+	else if (event->key() == Qt::Key::Key_Plus)
+		backend->camera_move(SCALE_OUT);
+	else if (event->key() == Qt::Key::Key_Minus)
+		backend->camera_move(SCALE_IN);
 	else
 		return;
 	ReRender();

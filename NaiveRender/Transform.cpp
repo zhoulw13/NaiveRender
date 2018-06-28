@@ -1,13 +1,12 @@
 #include "Transform.h"
 
-vec3 Transform::Transition(vec3 &eye, vec3& up, vec3 direction) {
-	vec3 w = glm::normalize(eye);
+vec3 Transform::Translation(vec3 &front, vec3& up, vec3 direction) {
+	vec3 w = glm::normalize(front);
 	vec3 u = glm::normalize(glm::cross(up, w));
 	vec3 v = glm::cross(w, u);
 
 	mat3 x(u, v, w);
-	return scale * direction * x;
-	eye += direction * scale;
+	return scale * x * direction;
 }
 
 mat3 Transform::Rotate(float degree, vec3 axis) {
@@ -28,33 +27,30 @@ mat3 Transform::Rotate(float degree, vec3 axis) {
 	return ret;
 }
 
-void Transform::Rotation(vec3 &eye, vec3 &up, int direction, ROTATE_TYPE type) {
-	
-	/*if (type == Z_ROTATE) {
-		eye = eye * Rotate(direction * scale, up);
+mat3 Transform::Rotation(vec3 &front, vec3 &up, int direction, ROTATE_TYPE type) {
+	mat3 ret;
+	if (type == Z_ROTATE) {
+		ret = Rotate(direction * scale, up);
+		front = front * ret;
 	}
 	else if (type == X_ROTATE) {
-		mat3 rot = Rotate(direction * scale, glm::cross(eye, up));
-		eye = eye * rot;
-		up = up * rot;
-	}*/
+		ret = Rotate(direction * scale, glm::cross(front, up));
+		front = front * ret;
+		up = up * ret;
+	}
+	return ret;
 }
 
-mat4 Transform::LookAt(vec3 &eye, vec3 &up) {
-	vec3 w = glm::normalize(eye);
-	vec3 u = glm::normalize(glm::cross(up, w));
-	vec3 v = glm::cross(w, u);
-	mat4 r = mat4(u.x, u.y, u.z, 0,
-		v.x, v.y, v.z, 0,
-		w.x, w.y, w.z, 0,
-		0, 0, 0, 1.0f);
-
-	mat4 t = mat4(1, 0, 0, -glm::dot(u, eye),
-		0, 1, 0, -glm::dot(v, eye),
-		0, 0, 1, -glm::dot(w, eye),
-		0, 0, 0, 1.0f);
-
-	return glm::transpose(r*t);
+mat3 Transform::Scale(float &scale, int direction) {
+	if (direction > 0)
+		scale *= 1.1;
+	else
+		scale /= 1.1;
+	return mat3(
+		scale, 0, 0,
+		0, scale, 0,
+		0, 0, scale
+	);
 }
 
 Transform::Transform() {

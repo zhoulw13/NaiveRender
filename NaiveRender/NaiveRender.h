@@ -23,6 +23,8 @@ protected:
 public slots:
 	void LoadObj();
 	void ResetView();
+	void ColorScheme();
+	void Projection();
 
 private:
 	Ui::NaiveRenderClass ui;
@@ -30,4 +32,12 @@ private:
 	bool loaded;
 
 	QLabel *displayLabel;
+
+	QAction *segmentAct;
+	QAction *faceAct;
+	QActionGroup *colorSchemeGroup;
+
+	QAction *persAct;
+	QAction *orthAct;
+	QActionGroup *projectionGroup;
 };
