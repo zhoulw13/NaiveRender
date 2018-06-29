@@ -8,6 +8,7 @@ using namespace std;
 #include <qfiledialog.h>
 #include <qpixmap.h>
 #include <qbuttongroup.h>
+#include <qbuffer.h>
 
 NaiveRender::NaiveRender(QWidget *parent)
 	: QMainWindow(parent)
@@ -28,6 +29,7 @@ void NaiveRender::InitUI() {
 	QMenuBar *mb = menuBar();
 	QMenu *file = mb->addMenu("&File");
 	file->addAction("&Load Obj", this, SLOT(LoadObj()));
+	file->addAction("&Load Texture", this, SLOT(LoadTexture()));
 	file->addSeparator();
 	file->addAction("&Quit", qApp, SLOT(quit()));
 
@@ -94,6 +96,54 @@ void NaiveRender::LoadObj() {
 		backend->readfile(file.c_str());
 		loaded = true;
 		ResetView();
+	}
+}
+
+void NaiveRender::LoadTexture() {
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Load Texture File"),
+		".", tr("Image Files (*.png)"));
+
+	if (!fileName.isEmpty()) {
+		fileName.replace('/', '\\');
+		string file = fileName.toLocal8Bit().constData();
+		QImage img(fileName);
+		img = img.convertToFormat(QImage::Format_RGB888);
+		QByteArray bytes;
+		QBuffer buffer(&bytes);
+		buffer.open(QIODevice::WriteOnly);
+		img.save(&buffer, "PNG");
+		QColor color(img.pixel(0, 0));
+		cout << color.red() << endl;
+
+		unsigned char * t8 = (unsigned char *)img.data_ptr();
+		cout << t8[0] << " " << t8[1] << " " << t8[2] << endl;
+
+		QFile* imageFile = new QFile(fileName);
+		imageFile->open(QIODevice::ReadOnly);
+		QByteArray bytes2 = imageFile->readAll();
+		cout << unsigned(bytes2[0]);
+		bytes2.data();
+
+		int ind = 0; 28 * 512 + 13;
+		char * texture = bytes.data();
+		cout << unsigned(texture[ind + 0]) << " " << unsigned(texture[ind + 1]) << " " << unsigned(texture[ind + 2]) << endl;
+
+		unsigned char * t2 = (unsigned char*)bytes2.data();
+		cout << unsigned(t2[ind + 0]) << " " << unsigned(t2[ind + 1]) << " " << unsigned(t2[ind + 2]) << endl;
+
+		char *t3 = bytes2.data();
+		cout << t3[0] << " " << t3[1] << " " << t3[2] << endl;
+
+		const std::size_t count = bytes2.size();
+		cout << count << endl;
+		unsigned char* hex = new unsigned char[count];
+		std::memcpy(hex, bytes2.constData(), count);
+		cout << unsigned(hex[0]) << " " << unsigned(hex[1]) << " " << unsigned(hex[2]) << endl;
+
+		
+
+		backend->loadtexture((unsigned char*)bytes.data());
+		ReRender();
 	}
 }
 

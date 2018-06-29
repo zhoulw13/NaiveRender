@@ -114,8 +114,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CloseGL.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="NaiveRender.cpp" />
+    <ClCompile Include="ReadObj.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -129,7 +130,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CloseGL.h" />
-    <ClInclude Include="constants.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="ReadObj.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

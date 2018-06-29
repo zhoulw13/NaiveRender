@@ -1,7 +1,6 @@
 #include "CloseGL.h"
 #include "constants.h"
 
-#include <fstream>
 #include <iostream>
 #include <algorithm>
 
@@ -23,75 +22,30 @@ void print(Point p) {
 	cout << "p " << p.y << " " << p.x << endl;
 }
 
-bool CloseGL::readvals(stringstream &ss, const int num, float *values) {
-	for (int i = 0; i < num; i++) {
-		ss >> values[i];
-		if (ss.fail())
-			return false;
-	}
-	return true;
-}
-
-void CloseGL::readfile(const char *filename) {
-	v_lst.clear();
-	f_lst.clear();
-	reset_data();
-
-	string str, cmd;
-	float values[3];
-	ifstream in;
-	in.open(filename);
-	if (in.is_open()) {
-		getline(in, str);
-		while (in) {
-			if (str.find_first_not_of(" \t\r\n") == string::npos || str[0] == '#') {
-				getline(in, str);
-				continue;
-			}
-
-			stringstream ss(str);
-			ss >> cmd;
-			if (cmd == "v") {
-				bool valid = readvals(ss, 3, values);
-				if (valid)
-					v_lst.push_back(glm::vec3(values[0], values[1], values[2]));
-			}
-			else if (cmd == "f") {
-				bool valid = readvals(ss, 3, values);
-				if (valid)
-					f_lst.push_back(glm::vec3(values[0]-1, values[1]-1, values[2]-1));
-			}
-			else {
-				cout << "??" << endl;
-			}
-			getline(in, str);
-		}
-	}
-
-	radius = 0;
-	int length = v_lst.size();
-	for (int i = 0; i < length; i++) {
-		if (glm::length(v_lst[i]) > radius) {
-			radius = glm::length(v_lst[i]);
-		}
-	}
-	reset_camera();
-
-	cout << "Load Over" << endl;
-	cout << "Radius: " << radius << "\n";
-	cout << "vertex num: " << v_lst.size() << "\n";
-	cout << "front  num: " << f_lst.size() << "\n";
-}
-
 CloseGL::CloseGL() {
 	data = new unsigned char[window_width * window_height * 3];
 	t = new Transform();
 	color_scheme = SEGMENT;
 	projection_method = PERSPECTIVE;
 	radius = 0;
+	obj = new ReadObj();
+	texture = NULL;
 
 	reset_data();
 	reset_transform();
+}
+
+void CloseGL::readfile(const char *filename) {
+	obj->readfile(filename);
+	reset_data();
+	radius = obj->radius;
+	reset_camera();
+}
+
+void CloseGL::loadtexture(unsigned char *t) {
+	texture = t;
+	int ind = 0; 28 * 512 + 13;
+	cout << unsigned(texture[ind+0]) << " " << unsigned(texture[ind+1]) << " " << unsigned(texture[ind+2]) << endl;
 }
 
 void CloseGL::reset_transform() {
@@ -292,10 +246,14 @@ void CloseGL::camera_move(MOVE_EVENT event) {
 }
 
 void CloseGL::render() {
-	int l = f_lst.size();
+	int l = obj->f_lst.size();
+	cout << "1 " << unsigned(default_color[0]) << " " << unsigned(default_color[1]) << " " << unsigned(default_color[2]) << endl;
 	reset_data();
 	for (int i = 0; i < l; i++) {
-		set_triangle(projection(v_lst[f_lst[i][0]]), projection(v_lst[f_lst[i][1]]), projection(v_lst[f_lst[i][2]]), default_color);
+		Point p1 = projection(obj->v_lst[obj->f_lst[i][0]]);
+		Point p2 = projection(obj->v_lst[obj->f_lst[i][1]]);
+		Point p3 = projection(obj->v_lst[obj->f_lst[i][2]]);
+		set_triangle(p1, p2, p3, default_color);
 	}
 }
 

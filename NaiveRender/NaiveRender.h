@@ -22,6 +22,7 @@ protected:
 
 public slots:
 	void LoadObj();
+	void LoadTexture();
 	void ResetView();
 	void ColorScheme();
 	void Projection();

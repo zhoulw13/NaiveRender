@@ -1,11 +1,9 @@
 #pragma once
-
-#include <sstream>
-#include <vector>
 using namespace std;
 
 #include <glm/glm.hpp>
 #include "Transform.h"
+#include "ReadObj.h"
 
 typedef struct Point {
 	int x, y;
@@ -43,8 +41,7 @@ enum PROJECTION_METHOD {
 class CloseGL {
 private:
 	glm::vec3 eye, up, front;
-	vector<glm::vec3> v_lst;
-	vector<glm::vec3> f_lst;
+	ReadObj *obj;
 
 	glm::mat3 k_camera;
 	Transform *t;
@@ -59,13 +56,14 @@ private:
 
 public:
 	unsigned char *data;
+	unsigned char *texture;
 
 public:
 	CloseGL();
-	bool readvals(stringstream &ss, const int num, float *values);
-	void readfile(const char *filename);
 
 	unsigned char *get_data() { return data; };
+	void readfile(const char *);
+	void loadtexture(unsigned char *);
 	void reset_data();
 	void reset_transform();
 	void reset_camera();
