@@ -54,15 +54,15 @@ void ReadObj::readfile(const char *filename) {
 					bool valid = readvals(ss, 9, values);
 					if (valid) {
 						f_lst.push_back(glm::vec3(values[0] - 1, values[3] - 1, values[6] - 1));
-						fn_lst.push_back(glm::vec3(values[1] - 1, values[4] - 1, values[7] - 1));
-						ft_lst.push_back(glm::vec3(values[2] - 1, values[5] - 1, values[8] - 1));
+						ft_lst.push_back(glm::vec3(values[1] - 1, values[4] - 1, values[7] - 1));
+						fn_lst.push_back(glm::vec3(values[2] - 1, values[5] - 1, values[8] - 1));
 					}
 				}
 				else if (vn_lst.size() > 0) {
 					bool valid = readvals(ss, 6, values);
 					if (valid) {
 						f_lst.push_back(glm::vec3(values[0] - 1, values[2] - 1, values[4] - 1));
-						fn_lst.push_back(glm::vec3(values[1] - 1, values[3] - 1, values[5] - 1));
+						ft_lst.push_back(glm::vec3(values[1] - 1, values[3] - 1, values[5] - 1));
 					}
 				}
 				else {

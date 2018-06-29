@@ -7,6 +7,7 @@ using namespace std;
 
 typedef struct Point {
 	int x, y;
+	int id;
 
 	Point() {};
 	Point(int y, int x) :x(x), y(y) {};
@@ -54,6 +55,8 @@ private:
 	float radius;
 	float scale;
 
+	int texture_h, texture_w;
+
 public:
 	unsigned char *data;
 	unsigned char *texture;
@@ -63,14 +66,14 @@ public:
 
 	unsigned char *get_data() { return data; };
 	void readfile(const char *);
-	void loadtexture(unsigned char *);
+	void loadtexture(unsigned char *, int, int);
 	void reset_data();
 	void reset_transform();
 	void reset_camera();
 	void set_pixel(int, int, const unsigned char *);
-	void set_segment(int, int, int, const unsigned char *);
+	void set_segment(int, int, int, glm::mat3 &, glm::mat2x3 &);
 	void set_segment(Point, Point, const unsigned char *);
-	void set_triangle(Point, Point, Point, const unsigned char *);
+	void set_triangle(int, const unsigned char *);
 	bool in_range(Point);
 	int intersect(Point, Point, int);
 

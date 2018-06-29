@@ -18,6 +18,11 @@ void print(glm::mat3 m) {
 	print(m[2]);
 }
 
+void print(glm::mat2x3 m) {
+	print(m[0]);
+	print(m[1]);
+}
+
 void print(Point p) {
 	cout << "p " << p.y << " " << p.x << endl;
 }
@@ -39,13 +44,16 @@ void CloseGL::readfile(const char *filename) {
 	obj->readfile(filename);
 	reset_data();
 	radius = obj->radius;
+	texture = NULL;
 	reset_camera();
 }
 
-void CloseGL::loadtexture(unsigned char *t) {
-	texture = t;
-	int ind = 0; 28 * 512 + 13;
-	cout << unsigned(texture[ind+0]) << " " << unsigned(texture[ind+1]) << " " << unsigned(texture[ind+2]) << endl;
+void CloseGL::loadtexture(unsigned char *t, int h, int w) {
+	if (obj->vt_lst.size() > 0 && obj->ft_lst.size() > 0) {
+		texture = t;
+		texture_h = h;
+		texture_w = w;
+	}
 }
 
 void CloseGL::reset_transform() {
@@ -101,14 +109,37 @@ bool CloseGL::in_range(Point p) {
 }
 
 //horizontal segment
-void CloseGL::set_segment(int i, int s, int e, const unsigned char *color) {
+void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx) {
 	if (!in_range(Point(i, s)) && !in_range(Point(i, e)))
 		return;
 	int sum = s + e;
 	s = min(s, e);
 	e = sum - s;
-	for (int k = s; k <= e; k++)
-		set_pixel(i, k, color);
+	if (color_scheme == SEGMENT || texture == NULL) {
+		for (int k = s; k <= e; k++)
+			set_pixel(i, k, default_color);
+	}
+	else {
+		glm::vec3 combine;
+		for (int k = s; k <= e; k++) {
+			combine = glm::vec3(k, i, 1) * cc;
+			glm::vec2 tmp = combine * tx;
+			//print(tx);
+			//print(cc);
+			//cout << "haha " << k << " " << i << endl;
+			//print(combine);
+			//cout << endl;
+
+			//cout << tmp[0] << " " << tmp[1] << endl;
+			if (combine[0] < 0 || combine[1] < 0 || combine[2] < 0)
+				return;
+			//cout << endl;
+			int ti = tmp[1] * texture_h;
+			int tj = tmp[0] * texture_w;
+			//cout << ti << " " << tj << endl;
+			set_pixel(i, k, &texture[(ti * texture_w + tj) * 3]);
+		}
+	}	
 }
 
 //arbitrary segment
@@ -162,38 +193,67 @@ void CloseGL::set_segment(Point p1, Point p2, const unsigned char *color) {
 	}
 }
 
-void CloseGL::set_triangle(Point p1, Point p2, Point p3, const unsigned char *color) {
-	if (p1.x == INT_MAX || p2.x == INT_MAX || p3.x == INT_MAX)
+void CloseGL::set_triangle(int id, const unsigned char *color) {
+	Point p[3];
+	p[0] = projection(obj->v_lst[obj->f_lst[id][0]]);
+	p[1] = projection(obj->v_lst[obj->f_lst[id][1]]);
+	p[2] = projection(obj->v_lst[obj->f_lst[id][2]]);
+
+	if (p[0].x == INT_MAX || p[1].x == INT_MAX || p[2].x == INT_MAX)
 		return;
+
+	if ((p[0].x - p[1].x) * (p[2].y - p[1].y) == (p[0].y - p[1].y) * (p[2].x - p[1].x))
+		return;
+
 	if (color_scheme == FACE) {
-		if (!in_range(p1) && !in_range(p2) && !in_range(p3))
+		if (!in_range(p[0]) && !in_range(p[1]) && !in_range(p[2]))
 			return;
-		Point sorted[3];
-		sorted[0] = p1;
-		sorted[1] = p2;
-		sorted[2] = p3;
-		sort(sorted, sorted + 3, [](Point a, Point b) {return a.y < b.y; });
+
+		p[0].id = 0;
+		p[1].id = 1;
+		p[2].id = 2;
+		sort(p, p + 3, [](Point a, Point b) {return a.y < b.y; });
+		
+		glm::mat3 cc = glm::mat3(
+			p[0].x, p[1].x, p[2].x,
+			p[0].y, p[1].y, p[2].y,
+			1, 1, 1
+		);
+
+		glm::mat2x3 tx;
+		if (texture != NULL) {
+			//print(cc);
+			glm::vec2 vt1 = obj->vt_lst[obj->ft_lst[id][p[0].id]];
+			glm::vec2 vt2 = obj->vt_lst[obj->ft_lst[id][p[1].id]];
+			glm::vec2 vt3 = obj->vt_lst[obj->ft_lst[id][p[2].id]];
+			tx = glm::mat2x3(
+				vt1[0], vt2[0], vt3[0],
+				vt1[1], vt2[1], vt3[1]
+			);
+		}
+
+		cc = glm::inverse(cc);
 
 		int s, e;
-		if (sorted[0].y != sorted[1].y) {
-			for (int i = sorted[0].y; i <= sorted[1].y; i++) {
-				s = intersect(sorted[0], sorted[1], i);
-				e = intersect(sorted[0], sorted[2], i);
-				set_segment(i, s, e, color);
+		if (p[0].y != p[1].y) {
+			for (int i = p[0].y; i <= p[1].y; i++) {
+				s = intersect(p[0], p[1], i);
+				e = intersect(p[0], p[2], i);
+				set_segment(i, s, e, cc, tx);
 			}
 		}
-		if (sorted[2].y != sorted[1].y) {
-			for (int i = sorted[2].y; i >= sorted[1].y; i--) {
-				s = intersect(sorted[2], sorted[1], i);
-				e = intersect(sorted[2], sorted[0], i);
-				set_segment(i, s, e, color);
+		if (p[2].y != p[1].y) {
+			for (int i = p[2].y; i >= p[1].y; i--) {
+				s = intersect(p[2], p[1], i);
+				e = intersect(p[2], p[0], i);
+				set_segment(i, s, e, cc, tx);
 			}
 		}
 	}
 	else if (color_scheme == SEGMENT) {
-		set_segment(p1, p2, color);
-		set_segment(p1, p3, color);
-		set_segment(p3, p2, color);
+		set_segment(p[0], p[1], color);
+		set_segment(p[0], p[2], color);
+		set_segment(p[2], p[1], color);
 	}
 }
 
@@ -247,13 +307,9 @@ void CloseGL::camera_move(MOVE_EVENT event) {
 
 void CloseGL::render() {
 	int l = obj->f_lst.size();
-	cout << "1 " << unsigned(default_color[0]) << " " << unsigned(default_color[1]) << " " << unsigned(default_color[2]) << endl;
 	reset_data();
 	for (int i = 0; i < l; i++) {
-		Point p1 = projection(obj->v_lst[obj->f_lst[i][0]]);
-		Point p2 = projection(obj->v_lst[obj->f_lst[i][1]]);
-		Point p3 = projection(obj->v_lst[obj->f_lst[i][2]]);
-		set_triangle(p1, p2, p3, default_color);
+		set_triangle(i, default_color);
 	}
 }
 
