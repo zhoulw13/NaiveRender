@@ -78,7 +78,6 @@ float RayTracing::intersect(glm::vec3 &origin, glm::vec3 &ray, int oi, int fi, H
 	glm::vec3 c = transform((*v_lst[oi])[tri[2]]);
 
 	glm::vec3 n = glm::normalize(glm::cross(c - a, b - a));
-	//cout << n[0] << " " << n[1] << " " << n[2] << endl;
 	if (glm::dot(n, ray) > 0)
 		info.normal = -n;
 	else

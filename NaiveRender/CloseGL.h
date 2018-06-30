@@ -74,7 +74,7 @@ public:
 	void reset_transform();
 	void reset_camera();
 	void set_pixel(int, int, const unsigned char *);
-	void set_segment(int, int, int, glm::mat3 &, glm::mat2x3 &, const unsigned char *);
+	void set_segment(int, int, int, const unsigned char *);
 	void set_segment(Point, Point, const unsigned char *);
 	void set_triangle(int, int, const unsigned char *);
 	bool in_range(Point);

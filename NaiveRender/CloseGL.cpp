@@ -5,32 +5,6 @@
 #include <algorithm>
 #include <omp.h>
 
-void print(glm::vec3 p) {
-	cout << "v " << p[0] << " " << p[1] << " " << p[2] << endl;
-}
-
-void print(glm::vec4 p) {
-	cout << "v " << p[0] << " " << p[1] << " " << p[2] << " " << p[3] << endl;
-}
-
-void print(glm::mat3 m) {
-	print(m[0]);
-	print(m[1]);
-	print(m[2]);
-}
-
-void print(glm::mat4 m) {
-	print(m[0]);
-	print(m[1]);
-	print(m[2]);
-	print(m[3]);
-}
-
-void print(glm::mat2x3 m) {
-	print(m[0]);
-	print(m[1]);
-}
-
 void print(Point p) {
 	cout << "p " << p.y << " " << p.x << endl;
 }
@@ -121,7 +95,7 @@ bool CloseGL::in_range(Point p) {
 }
 
 //horizontal segment
-void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx, const unsigned char *color) {
+void CloseGL::set_segment(int i, int s, int e, const unsigned char *color) {
 	if (!in_range(Point(i, s)) && !in_range(Point(i, e)))
 		return;
 	int sum = s + e;
@@ -130,27 +104,6 @@ void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx, c
 	if (color_scheme == SEGMENT || texture == NULL) {
 		for (int k = s; k <= e; k++)
 			set_pixel(i, k, color);
-	}
-	else {
-		glm::vec3 combine;
-		for (int k = s; k <= e; k++) {
-			combine = cc * glm::vec3(k, i, 1);
-			glm::vec2 tmp = combine * tx;
-			//print(tx);
-			//print(cc);
-			//cout << "haha " << k << " " << i << endl;
-			//print(combine);
-			//cout << endl;
-
-			//cout << tmp[0] << " " << tmp[1] << endl;
-			if (combine[0] < 0 || combine[1] < 0 || combine[2] < 0)
-				return;
-			//cout << endl;
-			int ti = tmp[1] * texture_h;
-			int tj = tmp[0] * texture_w;
-			//cout << ti << " " << tj << endl;
-			set_pixel(i, k, &texture[(ti * texture_w + tj) * 3]);
-		}
 	}	
 }
 
@@ -226,40 +179,20 @@ void CloseGL::set_triangle(int o_id, int f_id, const unsigned char *color) {
 		p[1].id = 1;
 		p[2].id = 2;
 		sort(p, p + 3, [](Point a, Point b) {return a.y < b.y; });
-		
-		glm::mat3 cc = glm::mat3(
-			p[0].x, p[1].x, p[2].x,
-			p[0].y, p[1].y, p[2].y,
-			1, 1, 1
-		);
-
-		glm::mat2x3 tx;
-		if (texture != NULL) {
-			//print(cc);
-			glm::vec2 vt1 = obj[o_id]->vt_lst[obj[o_id]->ft_lst[f_id][p[0].id]];
-			glm::vec2 vt2 = obj[o_id]->vt_lst[obj[o_id]->ft_lst[f_id][p[1].id]];
-			glm::vec2 vt3 = obj[o_id]->vt_lst[obj[o_id]->ft_lst[f_id][p[2].id]];
-			tx = glm::mat2x3(
-				vt1[0], vt2[0], vt3[0],
-				vt1[1], vt2[1], vt3[1]
-			);
-		}
-
-		cc = glm::transpose(glm::inverse(cc));
 
 		int s, e;
 		if (p[0].y != p[1].y) {
 			for (int i = p[0].y; i <= p[1].y; i++) {
 				s = intersect(p[0], p[1], i);
 				e = intersect(p[0], p[2], i);
-				set_segment(i, s, e, cc, tx, color);
+				set_segment(i, s, e, color);
 			}
 		}
 		if (p[2].y != p[1].y) {
 			for (int i = p[2].y; i >= p[1].y; i--) {
 				s = intersect(p[2], p[1], i);
 				e = intersect(p[2], p[0], i);
-				set_segment(i, s, e, cc, tx, color);
+				set_segment(i, s, e, color);
 			}
 		}
 	}

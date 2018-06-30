@@ -29,7 +29,7 @@ void NaiveRender::InitUI() {
 	QMenuBar *mb = menuBar();
 	QMenu *file = mb->addMenu("&File");
 	file->addAction("&Load Obj", this, SLOT(LoadObj()));
-	file->addAction("&Load Texture", this, SLOT(LoadTexture()));
+	//file->addAction("&Load Texture", this, SLOT(LoadTexture()));
 	file->addSeparator();
 	file->addAction("&Quit", qApp, SLOT(quit()));
 
