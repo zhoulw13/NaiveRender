@@ -7,6 +7,7 @@ using namespace std;
 struct HitInfo {
 	glm::vec3 normal;
 	glm::vec3 hitpos;
+	glm::mat3 cc;
 };
 
 class RayTracing

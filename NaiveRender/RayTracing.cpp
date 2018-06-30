@@ -5,7 +5,6 @@
 #include <algorithm>
 
 
-
 const float eps = 1e-6;
 const float eps2 = 1e-3;
 int sgn(float x) { return x > eps ? 1 : x < -eps ? 1 : 0; };
@@ -102,6 +101,13 @@ float RayTracing::intersect(glm::vec3 &origin, glm::vec3 &ray, int oi, int fi, H
 	else {
 		re = det(s, e1, e2) / x;
 		info.hitpos = origin + re * ray;
+		glm::mat3 tmp = glm::mat3(
+			a[0], b[0], c[0],
+			a[1], b[1], c[1],
+			1, 1, 1
+		);
+		glm::transpose(glm::inverse(tmp)) * info.hitpos;
+
 	}
 
 	return re;

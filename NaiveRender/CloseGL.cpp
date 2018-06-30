@@ -100,11 +100,9 @@ void CloseGL::reset_camera() {
 }
 
 void CloseGL::reset_data() {
-	for (int i = 0; i < window_height; i++) {
-		for (int j = 0; j < window_width; j++) {
+	for (int i = 0; i < window_height; i++)
+		for (int j = 0; j < window_width; j++)
 			set_pixel(i, j, bg_color);
-		}
-	}
 }
 
 void CloseGL::set_pixel(int i, int j, const unsigned char *color) {
@@ -136,7 +134,7 @@ void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx, c
 	else {
 		glm::vec3 combine;
 		for (int k = s; k <= e; k++) {
-			combine = glm::vec3(k, i, 1) * cc;
+			combine = cc * glm::vec3(k, i, 1);
 			glm::vec2 tmp = combine * tx;
 			//print(tx);
 			//print(cc);
@@ -247,7 +245,7 @@ void CloseGL::set_triangle(int o_id, int f_id, const unsigned char *color) {
 			);
 		}
 
-		cc = glm::inverse(cc);
+		cc = glm::transpose(glm::inverse(cc));
 
 		int s, e;
 		if (p[0].y != p[1].y) {
@@ -364,6 +362,7 @@ void CloseGL::set_color_scheme(COLOR_SCHEME cs) {
 
 void CloseGL::set_projection(PROJECTION_METHOD pm) {
 	projection_method = pm;
+	ray_tracing_flag = false;
 	reset_camera();
 }
 
@@ -374,7 +373,6 @@ void CloseGL::set_ray_tracing() {
 
 	glm::mat4 rt = glm::mat4(rot);
 	rt[3] = glm::vec4(-rot * tra, 1);
-	print(rt);
 
 	int l = obj.size();
 	for (int i = 0; i < l; i++) {
