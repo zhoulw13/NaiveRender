@@ -16,7 +16,11 @@ bool ReadObj::readvals(stringstream &ss, const int num, float *values) {
 
 void ReadObj::readfile(const char *filename) {
 	v_lst.clear();
+	vt_lst.clear();
+	vn_lst.clear();
 	f_lst.clear();
+	ft_lst.clear();
+	fn_lst.clear();
 
 	string str, cmd;
 	char *buffer = new char[100];
@@ -45,7 +49,7 @@ void ReadObj::readfile(const char *filename) {
 					vn_lst.push_back(glm::vec3(values[0], values[1], values[2]));
 			}
 			else if (cmd == "vt") {
-				bool valid = readvals(ss, 2, values);
+				bool valid = readvals(ss, 3, values);
 				if (valid)
 					vt_lst.push_back(glm::vec2(values[0], values[1]));
 			}
@@ -58,7 +62,7 @@ void ReadObj::readfile(const char *filename) {
 						fn_lst.push_back(glm::vec3(values[2] - 1, values[5] - 1, values[8] - 1));
 					}
 				}
-				else if (vn_lst.size() > 0) {
+				else if (vt_lst.size() > 0) {
 					bool valid = readvals(ss, 6, values);
 					if (valid) {
 						f_lst.push_back(glm::vec3(values[0] - 1, values[2] - 1, values[4] - 1));
@@ -79,21 +83,35 @@ void ReadObj::readfile(const char *filename) {
 		}
 	}
 
-	radius = 0;
+	float radius = 0;
+
 	int length = v_lst.size();
+	glm::vec3 center(0.0);
+	for (int i = 0; i < length; i++)
+		center += v_lst[i];
+	center /= length;
 	for (int i = 0; i < length; i++) {
-		if (glm::length(v_lst[i]) > radius) {
+		v_lst[i] -= center;
+		if (glm::length(v_lst[i]) > radius)
 			radius = glm::length(v_lst[i]);
-		}
 	}
+	for (int i = 0; i < length; i++)
+		v_lst[i] /= radius;
 
 	cout << "Load Over" << endl;
-	cout << "Radius: " << radius << "\n";
 	cout << "vertex num: " << v_lst.size() << "\n";
 	cout << "face   num: " << f_lst.size() << "\n";
+	cout << "vt num: " << vt_lst.size() << "\n";
+}
+
+void ReadObj::shift(glm::vec3 s) {
+	int length = v_lst.size();
+	for (int i = 0; i < length; i++)
+		v_lst[i] += s;
 }
 
 ReadObj::ReadObj() {
+	
 }
 
 

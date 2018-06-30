@@ -26,6 +26,7 @@ public slots:
 	void ResetView();
 	void ColorScheme();
 	void Projection();
+	void SetRayTracing();
 
 private:
 	Ui::NaiveRenderClass ui;

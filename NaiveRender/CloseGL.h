@@ -4,6 +4,7 @@ using namespace std;
 #include <glm/glm.hpp>
 #include "Transform.h"
 #include "ReadObj.h"
+#include "RayTracing.h"
 
 typedef struct Point {
 	int x, y;
@@ -42,7 +43,8 @@ enum PROJECTION_METHOD {
 class CloseGL {
 private:
 	glm::vec3 eye, up, front;
-	ReadObj *obj;
+	vector<ReadObj *> obj;
+	RayTracing *ray_tracing;
 
 	glm::mat3 k_camera;
 	Transform *t;
@@ -52,7 +54,8 @@ private:
 
 	COLOR_SCHEME color_scheme;
 	PROJECTION_METHOD projection_method;
-	float radius;
+	bool ray_tracing_flag;
+
 	float scale;
 
 	int texture_h, texture_w;
@@ -71,9 +74,9 @@ public:
 	void reset_transform();
 	void reset_camera();
 	void set_pixel(int, int, const unsigned char *);
-	void set_segment(int, int, int, glm::mat3 &, glm::mat2x3 &);
+	void set_segment(int, int, int, glm::mat3 &, glm::mat2x3 &, const unsigned char *);
 	void set_segment(Point, Point, const unsigned char *);
-	void set_triangle(int, const unsigned char *);
+	void set_triangle(int, int, const unsigned char *);
 	bool in_range(Point);
 	int intersect(Point, Point, int);
 
@@ -83,4 +86,5 @@ public:
 
 	void set_color_scheme(COLOR_SCHEME);
 	void set_projection(PROJECTION_METHOD);
+	void set_ray_tracing();
 };

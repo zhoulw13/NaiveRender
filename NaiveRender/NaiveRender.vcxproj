@@ -58,6 +58,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -89,6 +90,7 @@
       <DebugInformationFormat />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -116,6 +118,7 @@
     <ClCompile Include="CloseGL.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="NaiveRender.cpp" />
+    <ClCompile Include="RayTracing.cpp" />
     <ClCompile Include="ReadObj.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
@@ -131,6 +134,7 @@
   <ItemGroup>
     <ClInclude Include="CloseGL.h" />
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="RayTracing.h" />
     <ClInclude Include="ReadObj.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>

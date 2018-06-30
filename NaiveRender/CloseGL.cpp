@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <omp.h>
 
 void print(glm::vec3 p) {
 	cout << "v " << p[0] << " " << p[1] << " " << p[2] << endl;
@@ -16,6 +17,13 @@ void print(glm::mat3 m) {
 	print(m[0]);
 	print(m[1]);
 	print(m[2]);
+}
+
+void print(glm::mat4 m) {
+	print(m[0]);
+	print(m[1]);
+	print(m[2]);
+	print(m[3]);
 }
 
 void print(glm::mat2x3 m) {
@@ -32,8 +40,8 @@ CloseGL::CloseGL() {
 	t = new Transform();
 	color_scheme = SEGMENT;
 	projection_method = PERSPECTIVE;
-	radius = 0;
-	obj = new ReadObj();
+	ray_tracing = new RayTracing();
+	ray_tracing_flag = false;
 	texture = NULL;
 
 	reset_data();
@@ -41,15 +49,23 @@ CloseGL::CloseGL() {
 }
 
 void CloseGL::readfile(const char *filename) {
-	obj->readfile(filename);
+	ReadObj *newobj = new ReadObj();
+	newobj->readfile(filename);
+	
+	int l = obj.size();
+	for (int i = 0; i < l; i++)
+		obj[i]->shift(glm::vec3(-1.5, 0, 0));
+	obj.push_back(newobj);
+
 	reset_data();
-	radius = obj->radius;
 	texture = NULL;
+	ray_tracing_flag = false;
 	reset_camera();
+	reset_transform();
 }
 
 void CloseGL::loadtexture(unsigned char *t, int h, int w) {
-	if (obj->vt_lst.size() > 0 && obj->ft_lst.size() > 0) {
+	if (obj.size() > 0 && obj[0]->vt_lst.size() > 0 && obj[0]->ft_lst.size() > 0) {
 		texture = t;
 		texture_h = h;
 		texture_w = w;
@@ -65,19 +81,20 @@ void CloseGL::reset_transform() {
 	rot = glm::mat3(1.0f);
 	tra = eye;
 	sca = glm::mat3(1.0f);
+	ray_tracing->setTransform(rot, tra, sca);
 }
 
 void CloseGL::reset_camera() {
 	if (projection_method == PERSPECTIVE) {
 		k_camera = glm::mat3(
-			window_height / 2 /  radius * glm::length(eye), 0, window_width / 2,
-			0, window_height / 2 / radius * glm::length(eye), window_height / 2,
+			window_height / 2 * glm::length(eye), 0, window_width / 2,
+			0, window_height / 2 * glm::length(eye), window_height / 2,
 			0, 0, 1);
 	}
 	else if (projection_method == ORTHOGONAL) {
 		k_camera = glm::mat3(
-			window_height / 2 / radius, 0, window_width / 2,
-			0, window_height / 2 / radius, window_height / 2,
+			window_height / 2, 0, window_width / 2,
+			0, window_height / 2, window_height / 2,
 			0, 0, 1);
 	}
 }
@@ -85,10 +102,7 @@ void CloseGL::reset_camera() {
 void CloseGL::reset_data() {
 	for (int i = 0; i < window_height; i++) {
 		for (int j = 0; j < window_width; j++) {
-			int ind = (i * window_width + j) * 3;
-			data[ind] = bg_color[0];
-			data[ind + 1] = bg_color[1];
-			data[ind + 2] = bg_color[2];
+			set_pixel(i, j, bg_color);
 		}
 	}
 }
@@ -109,7 +123,7 @@ bool CloseGL::in_range(Point p) {
 }
 
 //horizontal segment
-void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx) {
+void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx, const unsigned char *color) {
 	if (!in_range(Point(i, s)) && !in_range(Point(i, e)))
 		return;
 	int sum = s + e;
@@ -117,7 +131,7 @@ void CloseGL::set_segment(int i, int s, int e, glm::mat3 &cc, glm::mat2x3 &tx) {
 	e = sum - s;
 	if (color_scheme == SEGMENT || texture == NULL) {
 		for (int k = s; k <= e; k++)
-			set_pixel(i, k, default_color);
+			set_pixel(i, k, color);
 	}
 	else {
 		glm::vec3 combine;
@@ -193,11 +207,12 @@ void CloseGL::set_segment(Point p1, Point p2, const unsigned char *color) {
 	}
 }
 
-void CloseGL::set_triangle(int id, const unsigned char *color) {
+void CloseGL::set_triangle(int o_id, int f_id, const unsigned char *color) {
 	Point p[3];
-	p[0] = projection(obj->v_lst[obj->f_lst[id][0]]);
-	p[1] = projection(obj->v_lst[obj->f_lst[id][1]]);
-	p[2] = projection(obj->v_lst[obj->f_lst[id][2]]);
+
+	p[0] = projection(obj[o_id]->v_lst[obj[o_id]->f_lst[f_id][0]]);
+	p[1] = projection(obj[o_id]->v_lst[obj[o_id]->f_lst[f_id][1]]);
+	p[2] = projection(obj[o_id]->v_lst[obj[o_id]->f_lst[f_id][2]]);
 
 	if (p[0].x == INT_MAX || p[1].x == INT_MAX || p[2].x == INT_MAX)
 		return;
@@ -223,9 +238,9 @@ void CloseGL::set_triangle(int id, const unsigned char *color) {
 		glm::mat2x3 tx;
 		if (texture != NULL) {
 			//print(cc);
-			glm::vec2 vt1 = obj->vt_lst[obj->ft_lst[id][p[0].id]];
-			glm::vec2 vt2 = obj->vt_lst[obj->ft_lst[id][p[1].id]];
-			glm::vec2 vt3 = obj->vt_lst[obj->ft_lst[id][p[2].id]];
+			glm::vec2 vt1 = obj[o_id]->vt_lst[obj[o_id]->ft_lst[f_id][p[0].id]];
+			glm::vec2 vt2 = obj[o_id]->vt_lst[obj[o_id]->ft_lst[f_id][p[1].id]];
+			glm::vec2 vt3 = obj[o_id]->vt_lst[obj[o_id]->ft_lst[f_id][p[2].id]];
 			tx = glm::mat2x3(
 				vt1[0], vt2[0], vt3[0],
 				vt1[1], vt2[1], vt3[1]
@@ -239,14 +254,14 @@ void CloseGL::set_triangle(int id, const unsigned char *color) {
 			for (int i = p[0].y; i <= p[1].y; i++) {
 				s = intersect(p[0], p[1], i);
 				e = intersect(p[0], p[2], i);
-				set_segment(i, s, e, cc, tx);
+				set_segment(i, s, e, cc, tx, color);
 			}
 		}
 		if (p[2].y != p[1].y) {
 			for (int i = p[2].y; i >= p[1].y; i--) {
 				s = intersect(p[2], p[1], i);
 				e = intersect(p[2], p[0], i);
-				set_segment(i, s, e, cc, tx);
+				set_segment(i, s, e, cc, tx, color);
 			}
 		}
 	}
@@ -303,13 +318,43 @@ void CloseGL::camera_move(MOVE_EVENT event) {
 		sca = t->Scale(scale, 1);
 	else if (event == SCALE_IN)
 		sca = t->Scale(scale, -1);
+	ray_tracing->setTransform(rot, tra, sca);
 }
 
 void CloseGL::render() {
-	int l = obj->f_lst.size();
 	reset_data();
-	for (int i = 0; i < l; i++) {
-		set_triangle(i, default_color);
+	if (!ray_tracing_flag) {
+		int l = obj.size();
+		for (int i = 0; i < l; i++) {
+
+			unsigned char *color_ = new unsigned char[3];
+			color_[0] = ambient[i][0] * 255;
+			color_[1] = ambient[i][1] * 255;
+			color_[2] = ambient[i][2] * 255;
+
+			int d = obj[i]->f_lst.size();
+			for (int j = 0; j < d; j++) {
+				set_triangle(i, j, color_);
+			}
+		}
+	}
+	else {
+		#pragma omp parallel for
+		for (int i = 0; i < window_height; i++) {
+			#pragma omp parallel for
+			for (int j = 0; j < window_width; j++) {
+				HitInfo info;
+				glm::vec3 ray = ray_tracing->rayThruPixel(float(i) + 0.5, float(j) + 0.5);
+				glm::vec3 hit = ray_tracing->intersection(vec3(0,0,0), ray, info);
+				glm::vec3 color = ray_tracing->findColor(ray, hit, info, 1);
+				unsigned char *color_ = new unsigned char[3];
+				color_[0] = min(color[0], 1.0f) * 255;
+				color_[1] = min(color[1], 1.0f) * 255;
+				color_[2] = min(color[2], 1.0f) * 255;
+
+				set_pixel(i, j, color_);
+			}
+		}
 	}
 }
 
@@ -320,4 +365,19 @@ void CloseGL::set_color_scheme(COLOR_SCHEME cs) {
 void CloseGL::set_projection(PROJECTION_METHOD pm) {
 	projection_method = pm;
 	reset_camera();
+}
+
+void CloseGL::set_ray_tracing() {
+	ray_tracing_flag = true;
+	ray_tracing->setAxis(front, up);
+	ray_tracing->setTransform(rot, tra, sca);
+
+	glm::mat4 rt = glm::mat4(rot);
+	rt[3] = glm::vec4(-rot * tra, 1);
+	print(rt);
+
+	int l = obj.size();
+	for (int i = 0; i < l; i++) {
+		ray_tracing->addData(&obj[i]->f_lst, &obj[i]->v_lst);
+	}
 }

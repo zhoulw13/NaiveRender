@@ -39,6 +39,8 @@ void NaiveRender::InitUI() {
 	QMenu *colorSchemeMenu = view->addMenu("&Color Scheme");
 	view->addSeparator();
 	QMenu *projectionMenu = view->addMenu("&Projection");
+	view->addSeparator();
+	view->addAction("Ray Tracing", this, SLOT(SetRayTracing()));
 
 	//color scheme menu group
 	colorSchemeGroup = new QActionGroup(this);
@@ -134,6 +136,11 @@ void NaiveRender::Projection() {
 		backend->set_projection(PERSPECTIVE);
 	else if (projectionGroup->checkedAction() == orthAct)
 		backend->set_projection(ORTHOGONAL);
+	ReRender();
+}
+
+void NaiveRender::SetRayTracing() {
+	backend->set_ray_tracing();
 	ReRender();
 }
 
